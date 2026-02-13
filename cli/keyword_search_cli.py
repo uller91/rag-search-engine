@@ -15,13 +15,13 @@ def main() -> None:
     match args.command:
         case "search":
             print(f"Searching for: {args.query}")
-            result = json_read("data/movies.json", args.query)
+            result = json_read("data/movies.json", args.query.lower())
             
             i = 1
             for film in result:
                 print(f"{i}. {film["title"]}")
                 i += 1
-                
+
             pass
         case _:
             parser.print_help()

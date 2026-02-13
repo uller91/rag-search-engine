@@ -9,7 +9,7 @@ def json_read(path, query) -> list[dict]:
     search_result = []
     i = 0
     for film in data["movies"]:
-        if query in film["title"] and i < search_limit:
+        if query.lower() in (film["title"]).lower() and i < search_limit: #case sensitivity
             search_result.append(film)
             i += 1
 
