@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
-from intenal.json_search import json_read
+from internal.json_search import json_read
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Keyword Search CLI")
