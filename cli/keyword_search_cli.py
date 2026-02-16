@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
-from internal.json_search import json_read
+from internal.keyword_search import keyword_search
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Keyword Search CLI")
@@ -15,7 +15,7 @@ def main() -> None:
     match args.command:
         case "search":
             print(f"Searching for: {args.query}")
-            result = json_read("data/movies.json", args.query)
+            result = keyword_search("data/movies.json", args.query)
             
             i = 1
             for film in result:
