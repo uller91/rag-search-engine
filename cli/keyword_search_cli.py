@@ -15,7 +15,7 @@ def main() -> None:
     match args.command:
         case "search":
             print(f"Searching for: {args.query}")
-            result = json_read("data/movies.json", args.query.lower())
+            result = json_read("data/movies.json", args.query)
             
             i = 1
             for film in result:
