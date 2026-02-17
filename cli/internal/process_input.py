@@ -1,4 +1,5 @@
 import string
+from internal.process_files import get_stop_words
 
 def input_clean(input) -> str:
     frm = ""
@@ -9,7 +10,9 @@ def input_clean(input) -> str:
 
 def input_tokenize(input) -> list[str]:
     clean_input = input_clean(input)
-    return list(filter(lambda x: x != " ", clean_input.split()))
+    token_input = list(filter(lambda x: x != " ", clean_input.split()))
+    no_stop_words_token_input = remove_stop_words(token_input, get_stop_words())
+    return no_stop_words_token_input
 
 def match_tokens(tkns1, tkns2) -> bool:
     for tk1 in tkns1:

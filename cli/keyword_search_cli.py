@@ -15,7 +15,7 @@ def main() -> None:
     match args.command:
         case "search":
             print(f"Searching for: {args.query}")
-            result = keyword_search("data/movies.json", args.query)
+            result = keyword_search(args.query)
             
             i = 1
             for film in result:

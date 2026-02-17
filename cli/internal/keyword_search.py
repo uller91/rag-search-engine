@@ -1,24 +1,18 @@
-import json
-from internal.process_input import input_tokenize, match_tokens, remove_stop_words
+from internal.process_input import input_tokenize, match_tokens
+from internal.process_files import get_movies
 
 search_limit = 5
-stop_words_path = "data/stopwords.txt"
 
-def keyword_search(path, query) -> list[dict]:
-    with open(path, 'r') as f:
-        data = json.load(f)
+def keyword_search(query) -> list[dict]:
+    query_tokens = input_tokenize(query)
 
-    with open(stop_words_path, 'r') as f_stw:
-        stop_list = (f_stw.read()).splitlines()
-
-    query_tokens = remove_stop_words(input_tokenize(query), stop_list)
-
+    movies = get_movies()
     search_result = []
     i = 0
-    for film in data["movies"]:
+    for film in movies:
         if i >= search_limit:
             break
-        title_tokens = remove_stop_words(input_tokenize(film["title"]), stop_list)
+        title_tokens = input_tokenize(film["title"])
         if match_tokens(query_tokens, title_tokens):
             search_result.append(film)
             i += 1
