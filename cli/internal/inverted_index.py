@@ -12,7 +12,7 @@ class InvertedIndex:
         self.index = {} # [token] = (id...)
         self.docmap = {} # [id] = {film}
 
-    def __add_document(self, doc_id, text):
+    def __add_document(self, doc_id, text) -> None:
         tokens = input_tokenize(text)
         for token in tokens:
             if token in self.index.keys():
@@ -26,10 +26,12 @@ class InvertedIndex:
                 self.index[token] = {doc_id}
 
     def get_documents(self, term) -> list[str]:
+        if term.lower() not in self.index.keys():
+            return []
         docs = list(self.index[term.lower()])
         return sorted(docs)
 
-    def build(self):
+    def build(self) -> None:
         movies = get_movies()
 
         for film in movies:
@@ -39,7 +41,7 @@ class InvertedIndex:
 
         print("index build is finished!")
 
-    def save(self):
+    def save(self) -> None:
         os.makedirs(cache_path, exist_ok=True)
 
         with open(index_path, 'wb') as i:
@@ -49,3 +51,20 @@ class InvertedIndex:
             pickle.dump(self.docmap, d)
         
         print("index save is finished!")
+
+    def load(self) -> None:
+        try:
+            with open(index_path, 'rb') as i:
+                self.index = pickle.load(i)
+        except FileNotFoundError:
+            raise Exception("error when trying to read index!")
+            return
+
+        try:
+            with open(docmap_path, 'rb') as d:
+                self.docmap = pickle.load(d)
+        except FileNotFoundError:
+            raise Exception("error when trying to read docmap!")
+            return
+        
+        #print("index load is finished!")

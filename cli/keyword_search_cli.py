@@ -5,31 +5,36 @@ from internal.keyword_search import keyword_search
 from internal.inverted_index import InvertedIndex
 
 def main() -> None:
+    index = InvertedIndex() #creating an index for the commands
+
     parser = argparse.ArgumentParser(description="Keyword Search CLI")
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
     search_parser = subparsers.add_parser("search", help="Search movies using BM25")
     search_parser.add_argument("query", type=str, help="Search query")
-    index_parser = subparsers.add_parser("build", help="Build index for movies")
+    build_parser = subparsers.add_parser("build", help="Build index for movies")
 
     args = parser.parse_args()
     match args.command:
         case "search":
+            try:
+                index.load() #load an index from cache
+            except Exception as e:
+                print(e)
+                return
+
             print(f"Searching for: {args.query}")
-            result = keyword_search(args.query)
+            result = keyword_search(args.query, index)
             
             i = 1
-            for film in result:
-                print(f"{i}. {film["title"]}")
+            for film_id in result:
+                print(f"{i}. {index.docmap[film_id]["title"]}. ID: {index.docmap[film_id]["id"]}")
                 i += 1
 
             pass
         case "build":
-            index = InvertedIndex()
             index.build()
             index.save()
-            docs = index.get_documents("merida")
-            print(f"First document for token 'merida' = {docs[0]}")
         case _:
             parser.print_help()
 
