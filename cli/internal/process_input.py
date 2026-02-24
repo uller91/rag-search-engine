@@ -14,7 +14,6 @@ def input_tokenize(input) -> list[str]:
     token_input = list(filter(lambda x: x != " ", clean_input.split()))
     no_stop_words_token_input = remove_stop_words(token_input, get_stop_words())
     stemmed_input = reduce_to_stem(no_stop_words_token_input)
-    #print(stemmed_input)
     return stemmed_input
 
 def match_tokens(tkns1, tkns2) -> bool:
@@ -33,4 +32,4 @@ def reduce_to_stem(input) -> list[str]:
     for token in input:
         stemmed_word = stemmer.stem(token)
         stemmed_input.append(stemmed_word)
-    return list(set(stemmed_input))
+    return stemmed_input

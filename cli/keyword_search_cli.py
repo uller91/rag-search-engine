@@ -12,7 +12,12 @@ def main() -> None:
 
     search_parser = subparsers.add_parser("search", help="Search movies using BM25")
     search_parser.add_argument("query", type=str, help="Search query")
+
     build_parser = subparsers.add_parser("build", help="Build index for movies")
+
+    tf_parser = subparsers.add_parser("tf", help="Usage: tf film_id term. Return the term frequency in the film description/title")
+    tf_parser.add_argument("id", type=int, help="Movie ID")
+    tf_parser.add_argument("term", type=str, help="Search term")
 
     args = parser.parse_args()
     match args.command:
@@ -35,6 +40,17 @@ def main() -> None:
         case "build":
             index.build()
             index.save()
+        case "tf":
+            try:
+                index.load() #load an index from cache
+            except Exception as e:
+                print(e)
+                return
+
+            print(f"Searching for the term for the term {args.term} in the movie with {args.id} id")
+            tf = index.get_tf(args.id, args.term)
+            print(f"Term {args.term} was encointered {tf} times")
+            
         case _:
             parser.print_help()
 

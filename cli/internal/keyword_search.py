@@ -11,7 +11,7 @@ def keyword_search(query, index) -> list[dict]:
         results = index.get_documents(token)
         for result in results:
             search_result.add(result)
-            if len(search_result) == 5:
+            if len(search_result) == search_limit:
                 return list(search_result)
 
     '''

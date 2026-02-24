@@ -1,20 +1,25 @@
 import os
 import pickle
+import collections
 from internal.process_input import input_tokenize
 from internal.process_files import get_movies
 
 cache_path = "cache"
 index_path = "cache/index.pkl"
 docmap_path = "cache/docmap.pkl"
+term_frequencies_path = "cache/term_frequencies.pkl"
 
 class InvertedIndex:
     def __init__(self):
         self.index = {} # [token] = (id...)
         self.docmap = {} # [id] = {film}
+        self.term_frequencies = {} # [id] = {Counter(word:times....)}
 
     def __add_document(self, doc_id, text) -> None:
         tokens = input_tokenize(text)
+        tf = collections.Counter()
         for token in tokens:
+            tf[token] += 1
             if token in self.index.keys():
                 current = self.index[token]
                 if doc_id in current:
@@ -24,12 +29,20 @@ class InvertedIndex:
                     self.index[token] = current
             else:
                 self.index[token] = {doc_id}
+        self.term_frequencies[doc_id] = tf
 
     def get_documents(self, term) -> list[str]:
         if term.lower() not in self.index.keys():
             return []
         docs = list(self.index[term.lower()])
         return sorted(docs)
+
+    def get_tf(self, doc_id, term) -> int:
+        token = input_tokenize(term)
+        if len(token) > 1:
+            raise Exception("The search term should only have one word!")
+        tf = self.term_frequencies[doc_id]
+        return tf[term] #Collection() returns 0 if term doesn't exist
 
     def build(self) -> None:
         movies = get_movies()
@@ -49,6 +62,9 @@ class InvertedIndex:
 
         with open(docmap_path, 'wb') as d:
             pickle.dump(self.docmap, d)
+
+        with open(term_frequencies_path, 'wb') as tf:
+            pickle.dump(self.term_frequencies, tf)
         
         print("index save is finished!")
 
@@ -65,6 +81,13 @@ class InvertedIndex:
                 self.docmap = pickle.load(d)
         except FileNotFoundError:
             raise Exception("error when trying to read docmap!")
+            return
+
+        try:
+            with open(term_frequencies_path, 'rb') as tf:
+                self.term_frequencies = pickle.load(tf)
+        except FileNotFoundError:
+            raise Exception("error when trying to read term frequencies!")
             return
         
         #print("index load is finished!")
