@@ -15,9 +15,12 @@ def main() -> None:
 
     build_parser = subparsers.add_parser("build", help="Build index for movies")
 
-    tf_parser = subparsers.add_parser("tf", help="Usage: tf film_id term. Return the term frequency in the film description/title")
+    tf_parser = subparsers.add_parser("tf", help="Return the term frequency in the film description/title. Usage: tf film_id term")
     tf_parser.add_argument("id", type=int, help="Movie ID")
     tf_parser.add_argument("term", type=str, help="Search term")
+
+    idf_parser = subparsers.add_parser("idf", help="Prints Inverse Document Frequency for the given term. Usage: idf term")
+    idf_parser.add_argument("term", type=str, help="Search term")
 
     args = parser.parse_args()
     match args.command:
@@ -50,7 +53,15 @@ def main() -> None:
             print(f"Searching for the term for the term {args.term} in the movie with {args.id} id")
             tf = index.get_tf(args.id, args.term)
             print(f"Term {args.term} was encointered {tf} times")
-            
+        case "idf":
+            try:
+                index.load() #load an index from cache
+            except Exception as e:
+                print(e)
+                return
+
+            idf = index.get_idf(args.term)
+            print(f"Inverse document frequency of '{args.term}': {idf:.2f}")
         case _:
             parser.print_help()
 

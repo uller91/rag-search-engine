@@ -1,6 +1,7 @@
 import os
 import pickle
 import collections
+import math
 from internal.process_input import input_tokenize
 from internal.process_files import get_movies
 
@@ -42,7 +43,20 @@ class InvertedIndex:
         if len(token) > 1:
             raise Exception("The search term should only have one word!")
         tf = self.term_frequencies[doc_id]
-        return tf[term] #Collection() returns 0 if term doesn't exist
+        return tf[token[0]] #Collection() returns 0 if term doesn't exist
+
+    def get_idf(self, term) -> int:
+        token = input_tokenize(term)
+        if len(token) > 1:
+            raise Exception("The search term should only have one word!")
+        total_num_doc = len(self.docmap)
+        term_match_num = 0
+        for id in self.docmap:
+            tf = self.get_tf(id, token[0])
+            if tf != 0:
+                term_match_num += 1
+        
+        return math.log((total_num_doc + 1) / (term_match_num + 1))
 
     def build(self) -> None:
         movies = get_movies()
