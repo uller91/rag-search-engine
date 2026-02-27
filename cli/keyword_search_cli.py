@@ -4,9 +4,17 @@ import argparse
 from internal.keyword_search import keyword_search 
 from internal.inverted_index import InvertedIndex
 
-def main() -> None:
-    index = InvertedIndex() #creating an index for the commands
+def bm25_idf_command(term: str) -> float:
+    index = InvertedIndex()
+    try:
+        index.load() #load an index from cache
+    except Exception as e:
+        print(e)
+        return
 
+    return float(index.get_bm25_idf(term))
+
+def main() -> None:
     parser = argparse.ArgumentParser(description="Keyword Search CLI")
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
@@ -26,9 +34,13 @@ def main() -> None:
     tfidf_parser.add_argument("id", type=int, help="Movie ID")
     tfidf_parser.add_argument("term", type=str, help="Search term")
 
+    bm25_idf_parser = subparsers.add_parser("bm25idf", help="Get BM25 IDF score for a given term")
+    bm25_idf_parser.add_argument("term", type=str, help="Term to get BM25 IDF score for")
+
     args = parser.parse_args()
     match args.command:
         case "search":
+            index = InvertedIndex()
             try:
                 index.load() #load an index from cache
             except Exception as e:
@@ -45,9 +57,11 @@ def main() -> None:
 
             pass
         case "build":
+            index = InvertedIndex()
             index.build()
             index.save()
         case "tf":
+            index = InvertedIndex()
             try:
                 index.load() #load an index from cache
             except Exception as e:
@@ -58,6 +72,7 @@ def main() -> None:
             tf = index.get_tf(args.id, args.term)
             print(f"Term {args.term} was encointered {tf} times")
         case "idf":
+            index = InvertedIndex()
             try:
                 index.load() #load an index from cache
             except Exception as e:
@@ -67,6 +82,7 @@ def main() -> None:
             idf = index.get_idf(args.term)
             print(f"Inverse document frequency of '{args.term}': {idf:.2f}")
         case "tfidf":
+            index = InvertedIndex()
             try:
                 index.load() #load an index from cache
             except Exception as e:
@@ -75,6 +91,9 @@ def main() -> None:
 
             tf_idf = index.get_tf(args.id, args.term) * index.get_idf(args.term)
             print(f"TF-IDF score of '{args.term}' in document '{args.id}': {tf_idf:.2f}")
+        case "bm25idf":
+            bm25idf = bm25_idf_command(args.term)
+            print(f"BM25 IDF score of '{args.term}': {bm25idf:.2f}")
         case _:
             parser.print_help()
 

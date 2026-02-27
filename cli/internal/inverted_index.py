@@ -32,23 +32,25 @@ class InvertedIndex:
                 self.index[token] = {doc_id}
         self.term_frequencies[doc_id] = tf
 
-    def get_documents(self, term) -> list[str]:
+    def get_documents(self, term: str) -> list[str]:
         if term.lower() not in self.index.keys():
             return []
         docs = list(self.index[term.lower()])
         return sorted(docs)
 
-    def get_tf(self, doc_id, term) -> int:
+    def get_tf(self, doc_id, term: str) -> int:
         token = input_tokenize(term)
         if len(token) > 1:
             raise Exception("The search term should only have one word!")
+
         tf = self.term_frequencies[doc_id]
         return tf[token[0]] #Collection() returns 0 if term doesn't exist
 
-    def get_idf(self, term) -> int:
+    def get_idf(self, term: str) -> float:
         token = input_tokenize(term)
         if len(token) > 1:
             raise Exception("The search term should only have one word!")
+
         total_num_doc = len(self.docmap)
         term_match_num = 0
         for id in self.docmap:
@@ -57,6 +59,20 @@ class InvertedIndex:
                 term_match_num += 1
         
         return math.log((total_num_doc + 1) / (term_match_num + 1))
+
+    def get_bm25_idf(self, term: str) -> float:
+        token = input_tokenize(term)
+        if len(token) > 1:
+            raise Exception("The search term should only have one word!")
+
+        total_num_doc = len(self.docmap)
+        term_match_num = 0
+        for id in self.docmap:
+            tf = self.get_tf(id, token[0])
+            if tf != 0:
+                term_match_num += 1
+        
+        return math.log((total_num_doc - term_match_num + 0.5) / (term_match_num + 0.5) + 1)
 
     def build(self) -> None:
         movies = get_movies()
