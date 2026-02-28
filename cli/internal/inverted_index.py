@@ -10,6 +10,8 @@ index_path = "cache/index.pkl"
 docmap_path = "cache/docmap.pkl"
 term_frequencies_path = "cache/term_frequencies.pkl"
 
+BM25_K1 = 1.5
+
 class InvertedIndex:
     def __init__(self):
         self.index = {} # [token] = (id...)
@@ -73,6 +75,12 @@ class InvertedIndex:
                 term_match_num += 1
         
         return math.log((total_num_doc - term_match_num + 0.5) / (term_match_num + 0.5) + 1)
+
+    def get_bm25_tf(self, doc_id, term, k1=BM25_K1) -> float:
+        tf = self.get_tf(doc_id, term)
+        tf_component = (tf * (k1 + 1)) / (tf + k1)
+        
+        return tf_component
 
     def build(self) -> None:
         movies = get_movies()
