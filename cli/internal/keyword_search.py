@@ -1,9 +1,9 @@
 from internal.process_input import input_tokenize, match_tokens
 from internal.process_files import get_movies
 
-search_limit = 5
+SEARCH_LIMIT = 5
 
-def keyword_search(query, index) -> list[dict]:
+def keyword_search(query, index) -> list[int]:
     query_tokens = input_tokenize(query)
 
     search_result = set()
@@ -11,7 +11,7 @@ def keyword_search(query, index) -> list[dict]:
         results = index.get_documents(token)
         for result in results:
             search_result.add(result)
-            if len(search_result) == search_limit:
+            if len(search_result) == SEARCH_LIMIT:
                 return list(search_result)
 
     '''

@@ -44,14 +44,12 @@ class InvertedIndex:
 
     def __get_avg_doc_length(self) -> float:
         number = len(self.doc_lengths.values())
-        print(number)
         if number == 0:
             return 0.0
 
         total = 0
         for ln in self.doc_lengths.values():
             total += ln
-        print(total)
 
         return (total / number)
 
@@ -103,6 +101,31 @@ class InvertedIndex:
         tf_component = (tf * (k1 + 1)) / (tf + k1 * length_norm)
         
         return tf_component
+
+    def bm25(self, doc_id, term) -> float:
+        #do not actually use this fucntion - it makes search very slow...
+        return self.get_bm25_idf(term) * self.get_bm25_tf(doc_id, term)
+
+    def bm25_search(self, query, limit) -> list[dict]:
+        query_tokens = input_tokenize(query)
+        scores = {} # [id] = {bm25_score}
+
+        for token in query_tokens:
+            results = self.get_documents(token) # [id...]
+            bm25_idf = self.get_bm25_idf(token)
+            for result in results: # id
+                bm25_score = self.get_bm25_tf(result, token) * bm25_idf
+                #bm25_score = self.bm25(result, token)
+
+                if result not in scores.keys():
+                    scores[result] = bm25_score
+                else:
+                    scores[result] += bm25_score
+
+        scores_sorted = sorted(scores.items(), key=lambda item: item[1], reverse=True)
+        return scores_sorted[:limit]
+        
+         
 
     def build(self) -> None:
         movies = get_movies()

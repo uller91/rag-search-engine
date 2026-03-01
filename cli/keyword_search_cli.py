@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
-from internal.keyword_search import keyword_search 
+from internal.keyword_search import keyword_search, SEARCH_LIMIT
 from internal.inverted_index import InvertedIndex, BM25_K1, BM25_B
 
 def bm25_idf_command(term: str) -> float:
@@ -24,6 +24,23 @@ def bm25_tf_command(doc_id, term, k1 = BM25_K1, b = BM25_B) -> float:
 
     return float(index.get_bm25_tf(doc_id, term, k1, b))
 
+def bm25search_command(query, limit = SEARCH_LIMIT) -> None:
+    index = InvertedIndex()
+    try:
+        index.load() #load an index from cache
+    except Exception as e:
+        print(e)
+        return
+
+    search_result = index.bm25_search(query, limit)
+
+    i = 1
+    for result in search_result:
+        print(f"{i}. ({index.docmap[result[0]]["id"]}) {index.docmap[result[0]]["title"]} - Score: {result[1]:.2f}")
+        i += 1
+
+    return
+        
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Keyword Search CLI")
@@ -56,6 +73,10 @@ def main() -> None:
     bm25_tf_parser.add_argument("k1", type=float, nargs='?', default=BM25_K1, help="Tunable BM25 K1 parameter")
     bm25_tf_parser.add_argument("b", type=float, nargs='?', default=BM25_B, help="Tunable BM25 b parameter")
 
+    bm25search_parser = subparsers.add_parser("bm25search", help="Search movies using full BM25 scoring")
+    bm25search_parser.add_argument("query", type=str, help="Search query")
+    bm25search_parser.add_argument("-l", "--limit", type=int, nargs='?', default=SEARCH_LIMIT, help="Optional BM25 search limit")
+
     args = parser.parse_args()
     match args.command:
         case "search":
@@ -67,14 +88,14 @@ def main() -> None:
                 return
 
             print(f"Searching for: {args.query}")
-            result = keyword_search(args.query, index)
+            search_result = keyword_search(args.query, index)
             
             i = 1
-            for film_id in result:
+            for film_id in search_result:
                 print(f"{i}. {index.docmap[film_id]["title"]}. ID: {index.docmap[film_id]["id"]}")
                 i += 1
 
-            pass
+            return
         case "build":
             index = InvertedIndex()
             index.build()
@@ -116,6 +137,9 @@ def main() -> None:
         case "bm25tf":
             bm25tf = bm25_tf_command(args.id, args.term, args.k1, args.b)
             print(f"BM25 TF score of '{args.term}' in document '{args.id}': {bm25tf:.2f}")
+        case "bm25search":
+            print(f"Searching for: {args.query}")
+            bm25search_command(args.query, args.limit)
         case _:
             parser.print_help()
 
