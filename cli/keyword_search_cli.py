@@ -2,7 +2,7 @@
 
 import argparse
 from internal.keyword_search import keyword_search 
-from internal.inverted_index import InvertedIndex, BM25_K1
+from internal.inverted_index import InvertedIndex, BM25_K1, BM25_B
 
 def bm25_idf_command(term: str) -> float:
     index = InvertedIndex()
@@ -14,7 +14,7 @@ def bm25_idf_command(term: str) -> float:
 
     return float(index.get_bm25_idf(term))
 
-def bm25_tf_command(doc_id, term, k1 = BM25_K1) -> float:
+def bm25_tf_command(doc_id, term, k1 = BM25_K1, b = BM25_B) -> float:
     index = InvertedIndex()
     try:
         index.load() #load an index from cache
@@ -22,7 +22,7 @@ def bm25_tf_command(doc_id, term, k1 = BM25_K1) -> float:
         print(e)
         return
 
-    return float(index.get_bm25_tf(doc_id, term, k1))
+    return float(index.get_bm25_tf(doc_id, term, k1, b))
 
 
 def main() -> None:
@@ -54,6 +54,7 @@ def main() -> None:
     bm25_tf_parser.add_argument("id", type=int, help="Document ID")
     bm25_tf_parser.add_argument("term", type=str, help="Term to get BM25 TF score for")
     bm25_tf_parser.add_argument("k1", type=float, nargs='?', default=BM25_K1, help="Tunable BM25 K1 parameter")
+    bm25_tf_parser.add_argument("b", type=float, nargs='?', default=BM25_B, help="Tunable BM25 b parameter")
 
     args = parser.parse_args()
     match args.command:
@@ -113,7 +114,7 @@ def main() -> None:
             bm25idf = bm25_idf_command(args.term)
             print(f"BM25 IDF score of '{args.term}': {bm25idf:.2f}")
         case "bm25tf":
-            bm25tf = bm25_tf_command(args.id, args.term, args.k1)
+            bm25tf = bm25_tf_command(args.id, args.term, args.k1, args.b)
             print(f"BM25 TF score of '{args.term}' in document '{args.id}': {bm25tf:.2f}")
         case _:
             parser.print_help()
