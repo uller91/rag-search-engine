@@ -4,6 +4,7 @@ from sentence_transformers import SentenceTransformer
 from internal.process_files import get_movies
 
 CACHE_DIR = "cache"
+SEARCH_LIMIT = 5
 
 class SemanticSearch:
     def __init__(self):
@@ -55,6 +56,31 @@ class SemanticSearch:
         embedding = self.model.encode([text])
         return embedding[0]
 
+    def search(self, query, limit):
+        if len(self.embeddings) == 0 or len(self.documents) == 0:
+            raise ValueError("No embeddings loaded. Call `load_or_create_embeddings` first.")
+
+        embedding_query = self.generate_embedding(query)
+        
+        cos_sim_calc = []
+        for i in range(len(self.documents)):
+            similarity = cosine_similarity(embedding_query, self.embeddings[i])
+            cos_sim_calc.append((similarity, self.documents[i]))
+
+        sorted_cos_sim_calc = sorted(cos_sim_calc, key=lambda x: x[0], reverse=True)
+
+        result = []
+        for j in range(limit):
+            return_doc = {}
+            #print(sorted_cos_sim_calc[j])
+            return_doc["score"] = sorted_cos_sim_calc[j][0]
+            return_doc["title"] = sorted_cos_sim_calc[j][1]["title"]
+            return_doc["description"] = sorted_cos_sim_calc[j][1]["description"]
+            result.append(return_doc)
+
+        return result
+
+
 def embed_query_text(query):
     semantic = SemanticSearch()
     embedding = semantic.generate_embedding(query)
@@ -84,3 +110,13 @@ def verify_model():
 
     print(f"Model loaded: {semantic.model}")
     print(f"Max sequence length: {semantic.model.max_seq_length}")
+
+def cosine_similarity(vec1, vec2):
+    dot_product = np.dot(vec1, vec2)
+    norm1 = np.linalg.norm(vec1)
+    norm2 = np.linalg.norm(vec2)
+
+    if norm1 == 0 or norm2 == 0:
+        return 0.0
+
+    return dot_product / (norm1 * norm2)
