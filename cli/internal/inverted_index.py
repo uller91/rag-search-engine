@@ -6,9 +6,6 @@ from internal.process_input import input_tokenize
 from internal.process_files import get_movies
 
 CACHE_DIR = "cache"
-index_path = "cache/index.pkl"
-docmap_path = "cache/docmap.pkl"
-term_frequencies_path = "cache/term_frequencies.pkl"
 
 BM25_K1 = 1.5
 BM25_B = 0.75
