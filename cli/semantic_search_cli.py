@@ -64,9 +64,13 @@ def main():
 
             print(f"Semantically chunking {len(args.text)} characters")
             i = 1
+            if len(chunks) == 0:
+                print(f"{i}.")
+
             for chunk in chunks:
                 print(f"{i}. {chunk}")
                 i += 1
+            
         case "chunk":
             chunks = chunk_command(args.text, args.chunk_size, args.overlap)
 
