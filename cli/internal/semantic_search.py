@@ -180,9 +180,11 @@ class ChunkedSemanticSearch(SemanticSearch):
         sorted_scores = sorted(scores.items(), key=lambda x: x[1], reverse=True)
 
         result = []
+        if limit > len(sorted_scores):
+            limit = len(sorted_scores)
         for j in range(limit):
             return_doc = {}
-            return_doc["id"] = sorted_scores[j][0]
+            return_doc["id"] = sorted_scores[j][0] + 1 #костыль - id фильма в дб на 1 больше чем в индексе, который считает с нуля, а не с 1 
             return_doc["title"] = self.documents[sorted_scores[j][0]]["title"]
             return_doc["description"] = self.documents[sorted_scores[j][0]]["description"][:PRINT_LIMIT]
             return_doc["score"] = sorted_scores[j][1]

@@ -24,10 +24,10 @@ def main() -> None:
 
             i = 1
             for result in search_result:
-                print(f"\n{i}. {result["document"]["title"]}")
-                print(f"   Hybrid Score: {result["hybrid_score"]:.4f} ")
-                print(f"   BM25: {result["keyword_score"]:.4f}, Semantic: {result["semantic_score"]:.4f} ")
-                print(f"   {result["document"]["description"][:PRINT_LIMIT]}...")
+                print(f"\n{i}. {result[1]["document"]["title"]}")
+                print(f"   Hybrid Score: {result[1]["hybrid_score"]:.4f} ")
+                print(f"   BM25: {result[1]["keyword_score"]:.4f}, Semantic: {result[1]["semantic_score"]:.4f} ")
+                print(f"   {result[1]["document"]["description"][:PRINT_LIMIT]}...")
 
                 i += 1
         case "normalize":

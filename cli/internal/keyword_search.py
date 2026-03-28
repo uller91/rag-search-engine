@@ -1,5 +1,6 @@
 from internal.process_input import input_tokenize, match_tokens
 from internal.process_files import get_movies
+from internal.inverted_index import InvertedIndex, BM25_K1, BM25_B
 
 SEARCH_LIMIT = 5
 
@@ -13,19 +14,6 @@ def keyword_search(query, index) -> list[int]:
             search_result.add(result)
             if len(search_result) == SEARCH_LIMIT:
                 return list(search_result)
-
-    '''
-    movies = get_movies()
-    search_result = []
-    i = 0
-    for film in movies:
-        if i >= search_limit:
-            break
-        title_tokens = input_tokenize(film["title"])
-        if match_tokens(query_tokens, title_tokens):
-            search_result.append(film)
-            i += 1
-    '''
 
     return search_result
 

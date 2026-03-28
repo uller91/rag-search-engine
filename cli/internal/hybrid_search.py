@@ -35,7 +35,6 @@ class HybridSearch:
         for i in range(len(results_keyword)):
             results_keyword_normalized.append([results_keyword[i][0], scores_keyword_normalized[i]])
 
-        #looks like it does --- this part doesnt work
         scores_semantic = []
         for result in results_semantic:
             scores_semantic.append(result["score"])
@@ -45,11 +44,10 @@ class HybridSearch:
 
         results = {}
         for result in results_keyword_normalized:
-            results[result[0]] = {"document": self.documents[result[0]], "keyword_score": result[1], "semantic_score": 0}
-        #looks like it does --- or this
+            results[result[0]] = {"document": self.index.docmap[result[0]], "keyword_score": result[1], "semantic_score": 0}
         for result in results_semantic:
             if result["id"] not in results.keys():
-                results[result["id"]] = {"document": self.documents[result["id"]], "keyword_score": 0, "semantic_score": result["score"]}
+                results[result["id"]] = {"document": self.index.docmap[result["id"]], "keyword_score": 0, "semantic_score": result["score"]}
             else:
                 results[result["id"]]["semantic_score"] = result["score"]
 
@@ -57,11 +55,11 @@ class HybridSearch:
             results[id]["hybrid_score"] = results[id]["keyword_score"] * alpha + results[id]["semantic_score"] * (1 - alpha)
 
 
-        #not done
+        results_sorted = sorted(results.items(), key = lambda x: x[1]["hybrid_score"], reverse=True)
         return_result = []
         j = 0
-        for key in results.keys():
-            return_result.append(results[key])
+        for result in results_sorted:
+            return_result.append(result)
             j += 1
             if j >= limit:
                 break
@@ -74,8 +72,6 @@ class HybridSearch:
 def normalize_command(scores):
     min_score = float(min(scores))
     max_score = float(max(scores))
-    print(min_score)
-    print(max_score)
 
     normalized = []
     if min_score == max_score:
