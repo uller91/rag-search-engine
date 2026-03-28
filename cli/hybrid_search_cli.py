@@ -1,5 +1,5 @@
 import argparse
-from internal.hybrid_search import normalize_command, SEARCH_LIMIT, SEARCH_ALPHA, PRINT_LIMIT, HybridSearch
+from internal.hybrid_search import normalize_command, SEARCH_LIMIT, SEARCH_ALPHA, PRINT_LIMIT, HybridSearch, RRF_K
 from internal.process_files import get_movies
 
 def main() -> None:
@@ -14,9 +14,31 @@ def main() -> None:
     weighted_search_parser.add_argument("-l", "--limit", type=int, nargs='?', default=SEARCH_LIMIT, help="Optional search limit")
     weighted_search_parser.add_argument("-a", "--alpha", type=float, nargs='?', default=SEARCH_ALPHA, help="Optional search alpha parameter")
 
+    rrf_search_parser = subparsers.add_parser("rrf-search", help="RRF search movies with BM25 and all-MiniLM-L6-v2 models")
+    rrf_search_parser.add_argument("query", type=str, help="Query to search")
+    rrf_search_parser.add_argument("-l", "--limit", type=int, nargs='?', default=SEARCH_LIMIT, help="Optional search limit")
+    rrf_search_parser.add_argument("-k", type=int, nargs='?', default=RRF_K, help="Optional RRF k parameter")
+
     args = parser.parse_args()
 
     match args.command:
+        case "rrf-search":
+            movies = get_movies()
+            hybrid = HybridSearch(movies)
+            search_result = hybrid.rrf_search(args.query, args.k, args.limit)
+
+            i = 1
+            for result in search_result:
+                if "keyword_rank" not in result[1]:
+                    result[1]["keyword_rank"] = "NA"
+                if "semantic_rank" not in result[1]:
+                    result[1]["semantic_rank"] = "NA"
+                print(f"\n{i}. {result[1]["document"]["title"]}")
+                print(f"   RRF Score: {result[1]["rrf_score"]:.4f} ")
+                print(f"   BM25 Rank: {result[1]["keyword_rank"]}, Semantic Rank: {result[1]["semantic_rank"]} ")
+                print(f"   {result[1]["document"]["description"][:PRINT_LIMIT]}...")
+
+                i += 1
         case "weighted-search":
             movies = get_movies()
             hybrid = HybridSearch(movies)

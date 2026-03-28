@@ -103,14 +103,14 @@ class ChunkedSemanticSearch(SemanticSearch):
         chunks_all = []
         chunks_metadata = []
 
-        doc_idx = 0
+        doc_idx = 1
         for document in self.documents:
             if len(document['description']) == 0:
                 continue
             
             chunks = semantic_chunk_command(document['description'], 4, 1)
 
-            chunk_idx = 0
+            chunk_idx = 1
             for chunk in chunks:
                 chunks_all.append(chunk)
                 metadata = {
@@ -176,7 +176,6 @@ class ChunkedSemanticSearch(SemanticSearch):
             if (score["movie_idx"] not in scores.keys()) or (score["score"] > scores[score["movie_idx"]]):
                 scores[score["movie_idx"]] = score["score"]
 
-        ###
         sorted_scores = sorted(scores.items(), key=lambda x: x[1], reverse=True)
 
         result = []
@@ -184,9 +183,9 @@ class ChunkedSemanticSearch(SemanticSearch):
             limit = len(sorted_scores)
         for j in range(limit):
             return_doc = {}
-            return_doc["id"] = sorted_scores[j][0] + 1 #костыль - id фильма в дб на 1 больше чем в индексе, который считает с нуля, а не с 1 
-            return_doc["title"] = self.documents[sorted_scores[j][0]]["title"]
-            return_doc["description"] = self.documents[sorted_scores[j][0]]["description"][:PRINT_LIMIT]
+            return_doc["id"] = sorted_scores[j][0]
+            return_doc["title"] = self.documents[sorted_scores[j][0]-1]["title"] #id на 1 больше чем индекс в []
+            return_doc["description"] = self.documents[sorted_scores[j][0]-1]["description"][:PRINT_LIMIT] #same
             return_doc["score"] = sorted_scores[j][1]
             return_doc["metadata"] = self.chunk_metadata
 

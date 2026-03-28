@@ -7,6 +7,7 @@ CACHE_DIR = "cache"
 SEARCH_LIMIT = 5
 SEARCH_ALPHA = 0.5
 PRINT_LIMIT = 100
+RRF_K = 60
 
 class HybridSearch:
     def __init__(self, documents):
@@ -66,8 +67,39 @@ class HybridSearch:
 
         return return_result
 
-    def rrf_search(self, query, k, limit=10):
-        raise NotImplementedError("RRF hybrid search is not implemented yet.")
+    def rrf_search(self, query, k, limit=5):
+        #already pre-sorted
+        results_keyword = self._bm25_search(query, limit*500)
+        results_semantic = self.semantic_search.search_chunked(query, limit*500)
+
+        results = {}
+        i = 1
+        for result in results_keyword:
+            results[result[0]] = {"document": self.index.docmap[result[0]], "keyword_rank": i, "rrf_score": rrf_score(i)}
+            i += 1
+        j = 1
+        for result in results_semantic:
+            if result["id"] not in results.keys():
+                results[result["id"]] = {"document": self.index.docmap[result["id"]], "semantic_rank": j, "rrf_score": rrf_score(j)}
+            else:
+                results[result["id"]]["semantic_rank"] = j
+                results[result["id"]]["rrf_score"] += rrf_score(j)
+            j += 1
+
+
+        results_sorted = sorted(results.items(), key = lambda x: x[1]["rrf_score"], reverse=True)
+        return_result = []
+        j = 0
+        for result in results_sorted:
+            return_result.append(result)
+            j += 1
+            if j >= limit:
+                break
+
+        return return_result
+
+def rrf_score(rank):
+    return 1 / (RRF_K + rank)
 
 def normalize_command(scores):
     min_score = float(min(scores))
