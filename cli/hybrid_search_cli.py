@@ -20,7 +20,7 @@ def main() -> None:
     rrf_search_parser.add_argument("-l", "--limit", type=int, nargs='?', default=SEARCH_LIMIT, help="Optional search limit")
     rrf_search_parser.add_argument("-k", type=int, nargs='?', default=RRF_K, help="Optional RRF k parameter")
     rrf_search_parser.add_argument("--enhance", type=str, choices=["spell", "rewrite", "expand"], help="Query enhancement method")
-    rrf_search_parser.add_argument("--rerank-method", type=str, choices=["individual"], help="Method to improve RRF search ranking")
+    rrf_search_parser.add_argument("--rerank-method", type=str, choices=["individual", "batch"], help="Method to improve RRF search ranking")
 
     args = parser.parse_args()
 
@@ -35,14 +35,15 @@ def main() -> None:
                 print(f"Enhanced query ({args.enhance}): '{args.query}' -> '{query}'\n")
 
             limit = args.limit
-            if args.rerank_method == "individual":
+            if args.rerank_method in ["individual", "batch"]: 
                 limit *= 5
             search_result = hybrid.rrf_search(query, args.k, limit)
-            if args.rerank_method == "individual":
+            if args.rerank_method in ["individual", "batch"]:
                 search_result = improve_result(args.rerank_method, args.query, search_result)
+
                     
-            if args.rerank_method == "individual":
-                print(f"Re-ranking top {args.limit} results using individual method...")
+            if args.rerank_method in ["individual", "batch"]:
+                print(f"Re-ranking top {args.limit} results using {args.rerank_method} method...")
                 print(f"Reciprocal Rank Fusion Results for '{args.query}' (k={args.k}):")
 
                 i = 1
@@ -55,7 +56,12 @@ def main() -> None:
                         result[1]["semantic_rank"] = "NA"
 
                     print(f"\n{i}. {result[1]["document"]["title"]}")
-                    print(f"   Re-rank Score: {int(result[2])}/10")
+                    
+                    if args.rerank_method == "individual":
+                        print(f"   Re-rank Score: {int(result[2])}/10")
+                    if args.rerank_method == "batch":
+                        print(f"   Re-rank Score: {int(result[2])}")
+
                     print(f"   RRF Score: {result[1]["rrf_score"]:.4f} ")
                     print(f"   BM25 Rank: {result[1]["keyword_rank"]}, Semantic Rank: {result[1]["semantic_rank"]} ")
                     print(f"   {result[1]["document"]["description"][:PRINT_LIMIT]}...")

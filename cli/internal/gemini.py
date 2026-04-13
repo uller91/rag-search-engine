@@ -1,5 +1,6 @@
 import os
 import time
+import json
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
@@ -19,6 +20,48 @@ def improve_result(command, query, results):
     model_name = "gemma-3-27b-it"
     
     match command:
+        case "batch":
+            temp_results = []
+            doc_list_str = ""            
+
+            for result in results:
+                movies_str = f"{result[1]["document"]["title"]} - Movie ID {result[1]["document"]["id"]} - {result[1]["document"]["description"]}"
+                doc_list_str += movies_str
+
+            request = f"""
+            Rank the movies listed below by relevance to the following search query.
+
+            Query: "{query}"
+
+            Movies:
+            {doc_list_str}
+
+            Return ONLY the movie IDs in order of relevance (best match first). Include ALL IDs given to you. Return a valid JSON list, nothing else.
+
+            For example:
+            [75, 12, 34, 2, 1]
+
+            Ranking:
+            """
+
+            response = client.models.generate_content(
+                model=model_name,
+                contents=request,
+                )
+
+            rankings = json.loads(response.text)
+
+            for result in results:
+                result = list(result)
+                if result[1]["document"]["id"] not in rankings:
+                    continue
+                rank = 1 + rankings.index(result[1]["document"]["id"]) 
+                result.append(rank)
+                temp_results.append(result)
+            
+            results_sorted = sorted(temp_results, key = lambda x: (x[2], x[1]["rrf_score"]), reverse=False)
+            return results_sorted
+
         case "individual":
             temp_results = []
 
@@ -52,9 +95,8 @@ def improve_result(command, query, results):
 
                 #time.sleep(3)
 
-    results_sorted = sorted(temp_results, key = lambda x: (x[2], x[1]["rrf_score"]), reverse=True)
-
-    return results_sorted
+            results_sorted = sorted(temp_results, key = lambda x: (x[2], x[1]["rrf_score"]), reverse=True)
+            return results_sorted
 
 def improve_query(command, query):
     api_key = load_api()
