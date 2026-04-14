@@ -1,5 +1,5 @@
 import argparse
-from internal.hybrid_search import normalize_command, SEARCH_LIMIT, SEARCH_ALPHA, PRINT_LIMIT, HybridSearch, RRF_K
+from internal.hybrid_search import normalize_command, SEARCH_LIMIT, SEARCH_ALPHA, PRINT_LIMIT, HybridSearch, RRF_K, improve_result_cross_encoder
 from internal.process_files import get_movies
 from internal.gemini import improve_query, improve_result
 
@@ -20,7 +20,8 @@ def main() -> None:
     rrf_search_parser.add_argument("-l", "--limit", type=int, nargs='?', default=SEARCH_LIMIT, help="Optional search limit")
     rrf_search_parser.add_argument("-k", type=int, nargs='?', default=RRF_K, help="Optional RRF k parameter")
     rrf_search_parser.add_argument("--enhance", type=str, choices=["spell", "rewrite", "expand"], help="Query enhancement method")
-    rrf_search_parser.add_argument("--rerank-method", type=str, choices=["individual", "batch"], help="Method to improve RRF search ranking")
+    rerank = ["individual", "batch", "cross_encoder"]
+    rrf_search_parser.add_argument("--rerank-method", type=str, choices=rerank, help="Method to improve RRF search ranking")
 
     args = parser.parse_args()
 
@@ -35,14 +36,16 @@ def main() -> None:
                 print(f"Enhanced query ({args.enhance}): '{args.query}' -> '{query}'\n")
 
             limit = args.limit
-            if args.rerank_method in ["individual", "batch"]: 
+            if args.rerank_method in rerank: 
                 limit *= 5
+
             search_result = hybrid.rrf_search(query, args.k, limit)
             if args.rerank_method in ["individual", "batch"]:
                 search_result = improve_result(args.rerank_method, args.query, search_result)
-
+            if args.rerank_method == "cross_encoder":
+                search_result = improve_result_cross_encoder(args.query, search_result)
                     
-            if args.rerank_method in ["individual", "batch"]:
+            if args.rerank_method in rerank:
                 print(f"Re-ranking top {args.limit} results using {args.rerank_method} method...")
                 print(f"Reciprocal Rank Fusion Results for '{args.query}' (k={args.k}):")
 
@@ -57,7 +60,7 @@ def main() -> None:
 
                     print(f"\n{i}. {result[1]["document"]["title"]}")
                     
-                    if args.rerank_method == "individual":
+                    if args.rerank_method in ["individual", "cross_encoder"]:
                         print(f"   Re-rank Score: {int(result[2])}/10")
                     if args.rerank_method == "batch":
                         print(f"   Re-rank Score: {int(result[2])}")
@@ -67,20 +70,25 @@ def main() -> None:
                     print(f"   {result[1]["document"]["description"][:PRINT_LIMIT]}...")
 
                     i += 1
-            else:
-                i = 1
-                for result in search_result:
-                    if "keyword_rank" not in result[1]:
-                        result[1]["keyword_rank"] = "NA"
-                    if "semantic_rank" not in result[1]:
-                        result[1]["semantic_rank"] = "NA"
+                    
+                return
+            
+            # no rerank
+            i = 1
+            for result in search_result:
+                if "keyword_rank" not in result[1]:
+                    result[1]["keyword_rank"] = "NA"
+                if "semantic_rank" not in result[1]:
+                    result[1]["semantic_rank"] = "NA"
 
-                    print(f"\n{i}. {result[1]["document"]["title"]}")
-                    print(f"   RRF Score: {result[1]["rrf_score"]:.4f} ")
-                    print(f"   BM25 Rank: {result[1]["keyword_rank"]}, Semantic Rank: {result[1]["semantic_rank"]} ")
-                    print(f"   {result[1]["document"]["description"][:PRINT_LIMIT]}...")
+                print(f"\n{i}. {result[1]["document"]["title"]}")
+                print(f"   RRF Score: {result[1]["rrf_score"]:.4f} ")
+                print(f"   BM25 Rank: {result[1]["keyword_rank"]}, Semantic Rank: {result[1]["semantic_rank"]} ")
+                print(f"   {result[1]["document"]["description"][:PRINT_LIMIT]}...")
 
-                    i += 1
+                i += 1
+
+                return
         case "weighted-search":
             movies = get_movies()
             hybrid = HybridSearch(movies)

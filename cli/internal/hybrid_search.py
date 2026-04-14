@@ -2,6 +2,7 @@ import os
 
 from internal.inverted_index import InvertedIndex
 from internal.semantic_search import ChunkedSemanticSearch
+from sentence_transformers import CrossEncoder
 
 CACHE_DIR = "cache"
 SEARCH_LIMIT = 5
@@ -114,3 +115,22 @@ def normalize_command(scores):
             normalized.append((float(scores[i])-min_score)/(max_score-min_score))
 
     return normalized
+
+def improve_result_cross_encoder(query, results):
+    pairs = []
+    for result in results:
+        pairs.append([query, f"{result[1]["document"]["title"]} - {result[1]["document"]["description"]}"])
+
+    cross_encoder = CrossEncoder("cross-encoder/ms-marco-TinyBERT-L2-v2")
+    # `predict` returns a list of numbers, one for each pair
+    scores = cross_encoder.predict(pairs)
+
+    temp_results = []
+    for i in range(len(results)):
+        result = list(results[i])
+        result.append(scores[i])
+        temp_results.append(result)
+    
+    results_sorted = sorted(temp_results, key = lambda x: (x[2], x[1]["rrf_score"]), reverse=True)
+
+    return results_sorted
