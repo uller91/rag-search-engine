@@ -1,7 +1,7 @@
 import argparse
 from internal.hybrid_search import normalize_command, SEARCH_LIMIT, SEARCH_ALPHA, PRINT_LIMIT, HybridSearch, RRF_K, improve_result_cross_encoder
 from internal.process_files import get_movies
-from internal.gemini import improve_query, improve_result
+from internal.gemini import improve_query, improve_result, evaluate_results
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Hybrid Search CLI")
@@ -22,6 +22,7 @@ def main() -> None:
     rrf_search_parser.add_argument("--enhance", type=str, choices=["spell", "rewrite", "expand"], help="Query enhancement method")
     rerank = ["individual", "batch", "cross_encoder"]
     rrf_search_parser.add_argument("--rerank-method", type=str, choices=rerank, help="Method to improve RRF search ranking")
+    rrf_search_parser.add_argument("--evaluate", action="store_true", help="Evaluate answers with Gemini")
 
     args = parser.parse_args()
 
@@ -60,7 +61,9 @@ def main() -> None:
 
                     print(f"\n{i}. {result[1]["document"]["title"]}")
                     
-                    if args.rerank_method in ["individual", "cross_encoder"]:
+                    if args.rerank_method == "cross_encoder":
+                        print(f"   Cross Encoder Score: {(result[2]):.4f}")
+                    if args.rerank_method == "individual":
                         print(f"   Re-rank Score: {int(result[2])}/10")
                     if args.rerank_method == "batch":
                         print(f"   Re-rank Score: {int(result[2])}")
@@ -70,25 +73,32 @@ def main() -> None:
                     print(f"   {result[1]["document"]["description"][:PRINT_LIMIT]}...")
 
                     i += 1
-                    
-                return
             
             # no rerank
-            i = 1
-            for result in search_result:
-                if "keyword_rank" not in result[1]:
-                    result[1]["keyword_rank"] = "NA"
-                if "semantic_rank" not in result[1]:
-                    result[1]["semantic_rank"] = "NA"
+            else:
+                i = 1
+                for result in search_result:
+                    if "keyword_rank" not in result[1]:
+                        result[1]["keyword_rank"] = "NA"
+                    if "semantic_rank" not in result[1]:
+                        result[1]["semantic_rank"] = "NA"
 
-                print(f"\n{i}. {result[1]["document"]["title"]}")
-                print(f"   RRF Score: {result[1]["rrf_score"]:.4f} ")
-                print(f"   BM25 Rank: {result[1]["keyword_rank"]}, Semantic Rank: {result[1]["semantic_rank"]} ")
-                print(f"   {result[1]["document"]["description"][:PRINT_LIMIT]}...")
+                    print(f"\n{i}. {result[1]["document"]["title"]}")
+                    print(f"   RRF Score: {result[1]["rrf_score"]:.4f} ")
+                    print(f"   BM25 Rank: {result[1]["keyword_rank"]}, Semantic Rank: {result[1]["semantic_rank"]} ")
+                    print(f"   {result[1]["document"]["description"][:PRINT_LIMIT]}...")
 
-                i += 1
+                    i += 1
+       
+            if args.evaluate:
+                evaluated_results = evaluate_results(query, search_result[:args.limit])
 
-                return
+                i = 1
+                for result in evaluated_results:    
+                    print(f"\n{i}. {result[1]["document"]["title"]}: {result[2]}/3")
+
+                    i += 1
+                
         case "weighted-search":
             movies = get_movies()
             hybrid = HybridSearch(movies)

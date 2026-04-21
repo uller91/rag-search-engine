@@ -13,6 +13,56 @@ def load_api():
 
     return api_key
     
+def evaluate_results(query, results):    
+    api_key = load_api()
+
+    client = genai.Client(api_key=api_key)
+    model_name = "gemma-3-27b-it"
+
+    temp_results = []
+    doc_list = []      
+
+    for result in results:
+        #doc_list.append(f"{result[1]["document"]["title"]}")
+        doc_list.append(f"{result[1]["document"]["title"]} - {result[1]["document"]["description"][:100]}")
+
+    doc_list_str = chr(10).join(doc_list)
+
+    request = f"""Rate how relevant each result is to this query on a 0-3 scale:
+
+    Query: "{query}"
+
+    Results:
+    {doc_list_str}
+
+    Scale:
+    - 3: Highly relevant
+    - 2: Relevant
+    - 1: Marginally relevant
+    - 0: Not relevant
+
+    Do NOT give any numbers other than 0, 1, 2, or 3.
+
+    Return ONLY the scores in the same order you were given the documents. Return a valid JSON list, nothing else. For example:
+
+    [2, 0, 3, 2, 0, 1]"""
+
+    response = client.models.generate_content(
+        model=model_name,
+        contents=request,
+        )
+
+    evaluations = json.loads(response.text)
+
+    i = 0
+    for result in results:
+        result = list(result)
+        result.append(evaluations[i])
+        temp_results.append(result)
+        i += 1
+
+    return temp_results
+
 def improve_result(command, query, results):
     api_key = load_api()
 
@@ -25,7 +75,7 @@ def improve_result(command, query, results):
             doc_list_str = ""            
 
             for result in results:
-                movies_str = f"{result[1]["document"]["title"]} - Movie ID {result[1]["document"]["id"]} - {result[1]["document"]["description"]}"
+                movies_str = f"{result[1]["document"]["title"]} - Movie ID {result[1]["document"]["id"]} - {result[1]["document"]["description"]}   "
                 doc_list_str += movies_str
 
             request = f"""

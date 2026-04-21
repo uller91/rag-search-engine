@@ -2,6 +2,7 @@ import json
 
 movies_json_path = "data/movies.json"
 stop_words_path = "data/stopwords.txt"
+golden_dataset_path = "data/golden_dataset.json"
 
 def get_stop_words() -> list[str] :
     with open(stop_words_path, 'r') as f_stw:
@@ -12,3 +13,8 @@ def get_movies() -> list[dict]:
     with open(movies_json_path, 'r') as f:
         data = json.load(f)
     return data["movies"]
+
+def get_golden_dataset():
+    with open(golden_dataset_path, 'r') as f:
+        data = json.load(f)
+    return data["test_cases"]
