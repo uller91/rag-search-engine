@@ -13,6 +13,39 @@ def load_api():
 
     return api_key
     
+def rag(query, results):
+    api_key = load_api()
+
+    client = genai.Client(api_key=api_key)
+    model_name = "gemma-3-27b-it"
+
+    doc_list = []      
+
+    for result in results:
+        #doc_list.append(f"{result[1]["document"]["title"]}")
+        doc_list.append(f"{result[1]["document"]["title"]} - {result[1]["document"]["description"][:100]}")
+
+    doc_list_str = chr(10).join(doc_list)
+
+    request = f"""
+    You are a RAG agent for Hoopla, a movie streaming service.
+    Your task is to provide a natural-language answer to the user's query based on documents retrieved during search.
+    Provide a comprehensive answer that addresses the user's query.
+
+    Query: {query}
+
+    Documents:
+    {doc_list_str}
+
+    Answer:"""
+
+    response = client.models.generate_content(
+        model=model_name,
+        contents=request,
+        )
+
+    return (response.text).strip()
+
 def evaluate_results(query, results):    
     api_key = load_api()
 
