@@ -5,6 +5,8 @@ from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 
+DESCRIPTION_LIMIT = 100
+
 def load_api():
     load_dotenv()
     api_key = os.environ.get("GEMINI_API_KEY")
@@ -12,7 +14,43 @@ def load_api():
         raise RuntimeError("GEMINI_API_KEY environment variable not set")
 
     return api_key
-    
+
+def summarize(query, results):
+    api_key = load_api()
+
+    client = genai.Client(api_key=api_key)
+    model_name = "gemma-3-27b-it"
+
+    doc_list = []      
+
+    for result in results:
+        #doc_list.append(f"{result[1]["document"]["title"]}")
+        doc_list.append(f"{result[1]["document"]["title"]} - {result[1]["document"]["description"][:DESCRIPTION_LIMIT]}")
+
+    doc_list_str = chr(10).join(doc_list)
+
+    request = f"""
+    Provide information useful to the query below by synthesizing data from multiple search results in detail.
+
+    The goal is to provide comprehensive information so that users know what their options are.
+    Your response should be information-dense and concise, with several key pieces of information about the genre, plot, etc. of each movie.
+
+    This should be tailored to Hoopla users. Hoopla is a movie streaming service.
+
+    Query: {query}
+
+    Search results:
+    {doc_list_str}
+
+    Provide a comprehensive 3–4 sentence answer that combines information from multiple sources:"""
+
+    response = client.models.generate_content(
+        model=model_name,
+        contents=request,
+        )
+
+    return (response.text).strip()
+
 def rag(query, results):
     api_key = load_api()
 
@@ -23,7 +61,7 @@ def rag(query, results):
 
     for result in results:
         #doc_list.append(f"{result[1]["document"]["title"]}")
-        doc_list.append(f"{result[1]["document"]["title"]} - {result[1]["document"]["description"][:100]}")
+        doc_list.append(f"{result[1]["document"]["title"]} - {result[1]["document"]["description"][:DESCRIPTION_LIMIT]}")
 
     doc_list_str = chr(10).join(doc_list)
 
