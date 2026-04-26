@@ -15,6 +15,36 @@ def load_api():
 
     return api_key
 
+def describe_image(image, mime, query):
+    api_key = load_api()
+
+    client = genai.Client(api_key=api_key)
+    model_name = "gemma-3-27b-it"
+
+    system_prompt = f"""
+    Given the included image and text query, rewrite the text query to improve search results from a movie database. Make sure to:
+    - Synthesize visual and textual information
+    - Focus on movie-specific details (actors, scenes, style, etc.)
+    - Return only the rewritten query, without any additional commentary
+    """
+
+    parts = [
+    system_prompt,
+    types.Part.from_bytes(data=image, mime_type=mime),
+    query,
+    ]
+
+    response = client.models.generate_content(
+        model=model_name,
+        contents=parts,
+        )
+
+    print(f"Rewritten query: {response.text.strip()}")
+    if response.usage_metadata is not None:
+        print(f"Total tokens:    {response.usage_metadata.total_token_count}")
+
+    return
+
 def question(question, results):
     api_key = load_api()
 
