@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 
-DESCRIPTION_LIMIT = 100
+DESCRIPTION_LIMIT = 1000
 
 def load_api():
     load_dotenv()
@@ -14,6 +14,88 @@ def load_api():
         raise RuntimeError("GEMINI_API_KEY environment variable not set")
 
     return api_key
+
+def question(question, results):
+    api_key = load_api()
+
+    client = genai.Client(api_key=api_key)
+    model_name = "gemma-3-27b-it"
+
+    doc_list = []      
+
+    i = 1
+    for result in results:
+        #doc_list.append(f"{result[1]["document"]["title"]}")
+        doc_list.append(f"[{i}] {result[1]["document"]["title"]} - {result[1]["document"]["description"][:DESCRIPTION_LIMIT]}")
+        i += 1
+
+    doc_list_str = chr(10).join(doc_list)
+
+    request = f"""
+    Answer the user's question based on the provided movies that are available on Hoopla, a streaming service.
+
+    Question: {question}
+
+    Documents:
+    {doc_list_str}
+
+    Instructions:
+    - Answer questions directly and concisely
+    - Be casual and conversational
+    - Don't be cringe or hype-y
+    - Talk like a normal person would in a chat conversation
+
+    Answer:"""
+
+    response = client.models.generate_content(
+        model=model_name,
+        contents=request,
+        )
+
+    return (response.text).strip()
+
+def citations(query, results):
+    api_key = load_api()
+
+    client = genai.Client(api_key=api_key)
+    model_name = "gemma-3-27b-it"
+
+    doc_list = []      
+
+    i = 1
+    for result in results:
+        #doc_list.append(f"{result[1]["document"]["title"]}")
+        doc_list.append(f"[{i}] {result[1]["document"]["title"]} - {result[1]["document"]["description"][:DESCRIPTION_LIMIT]}")
+        i += 1
+
+    doc_list_str = chr(10).join(doc_list)
+
+    request = f"""
+    Answer the query below and give information based on the provided documents.
+
+    The answer should be tailored to users of Hoopla, a movie streaming service.
+    If not enough information is available to provide a good answer, say so, but give the best answer possible while citing the sources available.
+
+    Query: {query}
+
+    Documents:
+    {doc_list_str}
+
+    Instructions:
+    - Provide a comprehensive answer that addresses the query
+    - Cite sources in the format [1], [2], etc. when referencing information
+    - If sources disagree, mention the different viewpoints
+    - If the answer isn't in the provided documents, say "I don't have enough information"
+    - Be direct and informative
+
+    Answer:"""
+
+    response = client.models.generate_content(
+        model=model_name,
+        contents=request,
+        )
+
+    return (response.text).strip()
 
 def summarize(query, results):
     api_key = load_api()
